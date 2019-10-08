@@ -8,7 +8,7 @@ SLAVE_ADDRESS = b'03'
 class OmegaCN740:
 
     def __init__(self):
-        self.instrument = serial.Serial(port='/dev/tty.usbserial-FT2B7WEI', baudrate=19200, timeout=1, parity=serial.PARITY_NONE,
+        self.instrument = serial.Serial(port='/dev/tty.usbserial-FT2B7WEI', baudrate=19200, timeout=0.1, parity=serial.PARITY_NONE,
                                         stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
         self.instrument.flushInput()
         self.instrument.flushOutput()
@@ -25,7 +25,6 @@ class OmegaCN740:
     def _ask(self, message):
         self.instrument.write(message)
         response = self.instrument.readline()
-        response += self.instrument.readline()
         message = response[response.index(SLAVE_ADDRESS + b'03')+4:-4]
         message_length = int(message[0:2])
         if message_length == 4:
