@@ -100,13 +100,11 @@ class StandaloneRecorder(HasTraits):
 
     viewer = Instance(Viewer)
 
-    sample_name = Str
+    sample_name = Str('default')
     sample_weight = Float
     heating_temp = Float
     heating_time = Int
     plot = Instance(Plot)
-
-    sample_name = 'default'
 
     temp_logger = Logger(sample_name=sample_name, sample_weight=sample_weight,
                               heating_temp=heating_temp, heating_time=heating_time)
