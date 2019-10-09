@@ -6,7 +6,7 @@ import time
 class OmegaCN740:
 
     def __init__(self, slave=1):
-        self.slave = bytes(str(hex(slave)[2:].zfill(2)), 'utf-8')
+        self.slave = '{:02x}'.format(slave)
         self.instrument = serial.Serial(port='/dev/tty.usbserial-FT2B7WEI', baudrate=19200, timeout=0.1, parity=serial.PARITY_NONE,
                                         stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
         self.instrument.flushInput()
@@ -23,8 +23,9 @@ class OmegaCN740:
 
     def _ask(self, message):
         self.instrument.write(message)
-        response = self.instrument.readline()
-        message = response[response.index(b''.join([self.slave, b'03']))+4:-4]
+        response = self.instrument.readline().decode('utf-8')
+        print(response)
+        message = response[response.index('{}{}'.format(self.slave, '03'))+4:-4]
         message_length = int(message[0:2])
         if message_length == 4:
             temperature = message[2:6]
@@ -38,17 +39,32 @@ class OmegaCN740:
         return temperature, setpoint
 
     def _compute_lrc(self, data):
-
         bytesum = sum(codecs.decode(data, 'hex'))
         checksum = (hex((256 - bytesum) & 0x0ff))[2:]
-        return bytes(checksum.zfill(2).upper(), 'utf-8')
+        return checksum.zfill(2).upper()
 
     def _read_temp(self):
-        message = b''.join([self.slave, b'03', b'4700', b'0002'])
-        message = b''.join([b':', message, self._compute_lrc(message), b'\r\n'])
+        data = '0002'
+
+        # message = b''.join([self.slave, b'03', b'4700', b'0002'])
+        # message = b''.join([b':', message, self._compute_lrc(message), b'\r\n'])
+        message = self._message('read', '4700', data)
         return message
 
     def _write_setpoint(self, temperature):
-        message = b''.join([self.slave, b'06', b'4701', bytes(hex(temperature)[2:].zfill(4).upper(), 'utf-8')])
-        message = b''.join([b':', message, self._compute_lrc(message), b'\r\n'])
+        data = hex(temperature)[2:].zfill(4).upper()
+        '{:04x}'.format(temperature).upper()
+
+        # message = b''.join([self.slave, b'06', b'4701', bytes(hex(temperature)[2:].zfill(4).upper(), 'utf-8')])
+        # message = b''.join([b':', message, self._compute_lrc(message), b'\r\n'])
+        message = self._message('write', '4701', data)
+        return message
+
+    def _message(self, rw, reg, data):
+        if rw == 'write':
+            rw = '06'
+        else:
+            rw = '03'
+        message = '{}{}{}{}'.format(self.slave, rw, reg, data)
+        message = bytes('{}{}{}{}'.format(':', message, self._compute_lrc(message), '\r\n'), 'utf-8')
         return message
