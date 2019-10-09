@@ -87,11 +87,13 @@ class Logger(HasTraits):
         self._write()
 
     def _make_path(self):
-        path = '{}.csv'.format(self.sample_name)
+        path = '{}-{}mg-{}C-{}s.csv'.format(self.sample_name, self.sample_weight,
+                                            self.heating_temp, self.heating_time)
         i = 1
         while 1:
             if os.path.isfile(path):
-                path = '{}-{:03n}.csv'.format(self.sample_name, i)
+                path = '{}-{}mg-{}C-{}s-{:03n}.csv'.format(self.sample_name, self.sample_weight,
+                                                           self.heating_temp, self.heating_time, i)
                 i += 1
             else:
                 return path
@@ -116,9 +118,9 @@ class StandaloneRecorder(HasTraits):
     temp_logger = Instance(Logger)
 
     view = View(HGroup(VGroup(Item(name='sample_name'),
-                              Item(name='sample_weight'),
-                              Item(name='heating_temp'),
-                              Item(name='heating_time'))), width=1000, height=500, resizable=True,
+                              Item(name='sample_weight', label="Sample Weight (mg)"),
+                              Item(name='heating_temp', label="Heating Temp (°C)"),
+                              Item(name='heating_time', label="Heating Time (s)"))), width=1000, height=500, resizable=True,
                 title='Temperature Plot')
 
     def _temp_logger_default(self):
