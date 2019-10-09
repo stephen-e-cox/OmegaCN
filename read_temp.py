@@ -1,6 +1,6 @@
 from device_functions import OmegaCN740
 
-instrument = OmegaCN740()
+instrument = OmegaCN740(slave=3)
 temperature, setpoint = instrument.read_temp()
 print(temperature)
 print(setpoint)
