@@ -24,7 +24,6 @@ class OmegaCN740:
     def _ask(self, message):
         self.instrument.write(message)
         response = self.instrument.readline().decode('utf-8')
-        print(response)
         message = response[response.index('{}{}'.format(self.slave, '03'))+4:-4]
         message_length = int(message[0:2])
         if message_length == 4:
