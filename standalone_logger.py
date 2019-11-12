@@ -58,7 +58,7 @@ class Viewer(HasTraits):
 class Logger(HasTraits):
     sample_name = Str('default')
     sample_weight = Float
-    heating_temp = Float
+    heating_power = Float
     heating_time = Int
 
     temperature = Float
@@ -72,7 +72,7 @@ class Logger(HasTraits):
 
         self.timestamp = datetime.datetime.now().isoformat()
 
-        header = 'time,temperature,setpoint'
+        header = 'datetime,timer,temperature,setpoint'
         self.path = self._make_path()
         with open(self.path, 'w') as wfile:
             wfile.write('{}\n'.format(header))
@@ -87,13 +87,13 @@ class Logger(HasTraits):
         self._write()
 
     def _make_path(self):
-        path = '{}-{}mg-{}C-{}s.csv'.format(self.sample_name, self.sample_weight,
-                                            self.heating_temp, self.heating_time)
+        path = '{}-{}mg-{}%-{}s.csv'.format(self.sample_name, self.sample_weight,
+                                            self.heating_power, self.heating_time)
         i = 1
         while 1:
             if os.path.isfile(path):
-                path = '{}-{}mg-{}C-{}s-{:03n}.csv'.format(self.sample_name, self.sample_weight,
-                                                           self.heating_temp, self.heating_time, i)
+                path = '{}-{}mg-{}%-{}s-{:03n}.csv'.format(self.sample_name, self.sample_weight,
+                                                           self.heating_power, self.heating_time, i)
                 i += 1
             else:
                 return path
@@ -111,7 +111,7 @@ class StandaloneRecorder(HasTraits):
 
     sample_name = Str('default')
     sample_weight = Float
-    heating_temp = Float
+    heating_power = Float
     heating_time = Int
     plot = Instance(Plot)
 
@@ -119,14 +119,14 @@ class StandaloneRecorder(HasTraits):
 
     view = View(HGroup(VGroup(Item(name='sample_name'),
                               Item(name='sample_weight', label="Sample Weight (mg)"),
-                              Item(name='heating_temp', label="Heating Temp (°C)"),
+                              Item(name='heating_power', label="Heating Power (%)"),
                               Item(name='heating_time', label="Heating Time (s)"))), width=1000, height=500, resizable=True,
                 title='Temperature Plot')
 
     def _temp_logger_default(self):
         return Logger(sample_name=self.sample_name,
                       sample_weight=self.sample_weight,
-                      heating_temp=self.heating_temp,
+                      heating_power=self.heating_power,
                       heating_time=self.heating_time)
 
     def timer_tick(self, *args):
