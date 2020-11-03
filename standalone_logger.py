@@ -9,7 +9,7 @@ from pyface.timer.api import Timer
 import os
 import datetime
 import time
-import pyfirmata
+# import pyfirmata
 
 try:
     from device_functions import OmegaCN740
@@ -23,7 +23,7 @@ except ImportError:
 
 
 INSTRUMENT = OmegaCN740(slave=3)
-arduino_board = pyfirmata.Arduino('/dev/cu.usbmodem145101')
+# arduino_board = pyfirmata.Arduino('/dev/cu.usbmodem145101')
 
 class Viewer(HasTraits):
     """ This class just contains the two data arrays that will be updated
