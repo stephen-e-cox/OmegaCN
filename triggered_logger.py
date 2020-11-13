@@ -275,6 +275,7 @@ class Demo(HasTraits):
         # schedule[(schedule.cell == self.controller.cell_number) & (schedule.run == 0)].replace(0, 1, inplace=True)
         try:
             self.controller.heating_temp = params[3]
+            INSTRUMENT[self.controller.cell_number - 1].write_setpoint(int(params[3]))
         except KeyError:
             self.controller.heating_temp = 0
         try:

@@ -70,7 +70,7 @@ class OmegaCN740:
 
     def _write_setpoint(self, temperature):
         data = hex(temperature)[2:].zfill(4).upper()
-        '{:04x}'.format(temperature).upper()
+        data = '{:04x}'.format(temperature).upper()
 
         # message = b''.join([self.slave, b'06', b'4701', bytes(hex(temperature)[2:].zfill(4).upper(), 'utf-8')])
         # message = b''.join([b':', message, self._compute_lrc(message), b'\r\n'])
