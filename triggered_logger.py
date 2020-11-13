@@ -193,7 +193,7 @@ class DemoHandler(Handler):
         Overridden here to stop the timer once the window is destroyed.
         """
 
-        info.object.timer.Stop()
+        # info.object.timer.Stop()
         return
 
 
