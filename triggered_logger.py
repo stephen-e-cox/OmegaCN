@@ -99,16 +99,12 @@ class Logger(HasTraits):
     current_time = Float
 
     start = None
+    path = None
 
     def __init__(self, *args, **kw):
         super(Logger, self).__init__(*args, **kw)
 
         self.timestamp = datetime.datetime.now().isoformat()
-
-        header = 'datetime,timer,temperature,setpoint'
-        self.path = self._make_path()
-        with open(self.path, 'w') as wfile:
-            wfile.write('{}\n'.format(header))
 
     def set_start_time(self):
         self.start = time.time()
@@ -117,9 +113,12 @@ class Logger(HasTraits):
         self.temperature, self.setpoint = INSTRUMENT[self.cell_number - 1].read_temp()
         self.timestamp = datetime.datetime.now().isoformat()
         self.current_time = time.time() - self.start
+        if not self.path:
+            self.path = self.make_path()
         self._write()
+        print([self.cell_number, self.step_number, self.heating_temp, self.heating_time])
 
-    def _make_path(self):
+    def make_path(self):
         path = '{}-{}-{}degC-{}min.csv'.format(self.cell_number, self.step_number,
                                                self.heating_temp, self.heating_time)
         i = 1
@@ -147,7 +146,6 @@ class StandaloneRecorder(HasTraits):
     cell_step_number = Array(np.int, (4, 1))
     heating_temp = Float
     heating_time = Float
-    plot = Instance(Plot)
 
     temp_logger = Instance(Logger)
 
@@ -165,19 +163,28 @@ class StandaloneRecorder(HasTraits):
                       heating_time=self.heating_time)
 
     def timer_tick(self, *args):
+        self.temp_logger.cell_number = self.cell_number
+        self.temp_logger.step_number = self.step_number
+        self.temp_logger.heating_temp = self.heating_temp
+        self.temp_logger.heating_time = self.heating_time
+        if self.temp_logger.current_time > self.heating_time*60:
+            self.temp_logger.start = None
         print('tick')
         cur_data = self.viewer.data
         cur_index = self.viewer.index
         if self.temp_logger.start is None:
+            self.temp_logger.path = self.temp_logger.make_path()
             self.temp_logger.set_start_time()
-
+            cur_data = []
+            cur_index = []
         self.temp_logger.update()
 
         new_data = np.hstack((cur_data, [self.temp_logger.temperature]))
         new_index = np.hstack((cur_index, [self.temp_logger.current_time]))
         self.viewer.index = new_index
         self.viewer.data = new_data
-
+        if self.temp_logger.current_time > self.heating_time*60:
+            self.temp_logger.start = None
 
 class DemoHandler(Handler):
 
@@ -218,11 +225,6 @@ class Demo(HasTraits):
         self._waiting_loop()
         self.timer = CallbackTimer.timer(callback=self.controller.timer_tick, interval=0.1,
                                          expire=self.controller.heating_time * 60)
-        print(self.controller.heating_time)
-        # do_after(self.controller.heating_time * 60000 + 5000, self._reset_logger())
-
-    def _reset_logger(self):
-        self.controller.temp_logger.start = None
 
     def _controller_default(self):
         return StandaloneRecorder(viewer=self.viewer)
@@ -263,13 +265,13 @@ class Demo(HasTraits):
         # self.controller.step_number = 1
         # self.controller.heating_temp = 300
         # self.controller.heating_time = 15
-        time.sleep(1)
         self._start_run()
 
     def _start_run(self):
         schedule = self.timetemps.data
         params = schedule[(schedule.cell == self.controller.cell_number) & (schedule.run == 0)].iloc[0]
         schedule.loc[schedule.index[(schedule.cell == self.controller.cell_number) & (schedule.run == 0)][0], 'run'] = 1
+        schedule.to_csv('testsched.csv', index=False)
         # schedule[(schedule.cell == self.controller.cell_number) & (schedule.run == 0)].replace(0, 1, inplace=True)
         try:
             self.controller.heating_temp = params[3]
@@ -280,7 +282,6 @@ class Demo(HasTraits):
         except KeyError:
             self.controller.heating_time = 1
         time.sleep(1)
-        print(self.controller.heating_time * 60)
 
 
 if __name__ == '__main__':
