@@ -1,17 +1,19 @@
 import codecs
 import serial
 import time
+import numpy as np
 
 
 class OmegaCN740:
 
-    def __init__(self, slave=1):
+    def __init__(self, slave=1, port='/dev/tty.usbserial-FT2B7WEI'):
         self.slave = '{:02x}'.format(slave)
-        self.instrument = serial.Serial(port='/dev/tty.usbserial-FT2B7WEI', baudrate=19200, timeout=0.1, parity=serial.PARITY_NONE,
+        self.port = port
+        self.instrument = serial.Serial(port=self.port, baudrate=19200, timeout=0.1, parity=serial.PARITY_NONE,
                                         stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
         self.instrument.flushInput()
         self.instrument.flushOutput()
-        time.sleep(1)
+        time.sleep(0.1)
 
     def read_temp(self):
         temperature, setpoint = self._ask(self._read_temp())
@@ -23,18 +25,34 @@ class OmegaCN740:
 
     def _ask(self, message):
         self.instrument.write(message)
-        response = self.instrument.readline().decode('utf-8')
-        message = response[response.index('{}{}'.format(self.slave, '03'))+4:-4]
-        message_length = int(message[0:2])
-        if message_length == 4:
-            temperature = message[2:6]
-            temperature = int(temperature, 16)/10
-            setpoint = message[6:10]
-            setpoint = int(setpoint, 16)/10
-        if message_length == 2:
-            temperature = message[2:6]
-            temperature = int(temperature, 16)
-            setpoint = None
+        # response = self.instrument.readline().decode('utf-8')
+        # message = response[response.index('{}{}'.format(self.slave, '03'))+4:-4]
+        # message_length = int(message[0:2])
+        # if message_length == 4:
+        #     temperature = message[2:6]
+        #     temperature = int(temperature, 16)/10
+        #     setpoint = message[6:10]
+        #     setpoint = int(setpoint, 16)/10
+        # if message_length == 2:
+        #     temperature = message[2:6]
+        #     temperature = int(temperature, 16)
+        #     setpoint = None
+        try:
+            response = self.instrument.readline().decode('utf-8')
+            message = response[response.index('{}{}'.format(self.slave, '03'))+4:-4]
+            message_length = int(message[0:2])
+            if message_length == 4:
+                temperature = message[2:6]
+                temperature = int(temperature, 16)/10
+                setpoint = message[6:10]
+                setpoint = int(setpoint, 16)/10
+            if message_length == 2:
+                temperature = message[2:6]
+                temperature = int(temperature, 16)
+                setpoint = None
+        except ValueError:
+            temperature = np.nan
+            setpoint = np.nan
         return temperature, setpoint
 
     def _compute_lrc(self, data):
